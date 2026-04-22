@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categorías y Scripts</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+    <meta http-equiv="Pragma" content="no-cache"/>
+    <meta http-equiv="Expires" content="0"/>
+
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+
+    <!-- Importar Material Icons desde Google Fonts -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+<main class="page">
+    <section class="hero">
+        <div class="topbar">
+            <div>
+                <h1>Categorías de Scripts</h1>
+                <p>
+                    Explora las categorías disponibles y revisa los scripts asociados de forma rápida y ordenada.
+                </p>
+            </div>
+
+            <div class="actions">
+                <button type="button" class="btn btn-secondary" onclick="openModal('categoryModal')">
+                    Nueva categoría
+                </button>
+                <button type="button" class="btn btn-primary" onclick="openModal('scriptModal')">
+                    Nuevo script
+                </button>
+            </div>
+        </div>
+
+        <span class="counter" th:text="${#lists.size(categories)} + ' categorías'">3 categorías</span>
+    </section>
+
+    <section class="category-grid" th:if="${categories != null and !#lists.isEmpty(categories)}">
+        <article class="category-card" th:each="category : ${categories}">
+            <div class="category-header">
+                <div class="category-info">
+                    <h2 th:text="${category.name}">Backend</h2>
+                    <!--<p th:text="${category.description ?: 'Sin descripción disponible'}">
+                        Scripts relacionados con procesos backend.
+                    </p>-->
+                </div>
+
+                <div class="category-meta">
+                    <span class="badge"
+                          th:text="${#lists.size(category.scripts)} + ' scripts'">
+                        4 scripts
+                    </span>
+                </div>
+            </div>
+
+            <div class="scripts">
+                <div class="scripts-empty"
+                     th:if="${category.scripts == null or #lists.isEmpty(category.scripts)}">
+                    Esta categoría no tiene scripts registrados.
+                </div>
+
+                <div class="script-item" th:each="script : ${category.scripts}">
+                    <div class="script-header">
+                        <h3 class="script-name" th:text="${script.name}">build-app</h3>
+                    </div>
+
+                    <!-- <p class="script-description"
+                        th:text="${script.description ?: 'Sin descripción'}">
+                         Compila y empaqueta la aplicación.
+                     </p>
+
+                     <pre class="script-command"
+                          th:if="${script.command != null and !#strings.isEmpty(script.command)}"
+                          th:text="${script.command}">./mvnw clean package</pre>-->
+
+                    <button type="button"
+                            class="btn btn-primary btn-small"
+                            th:onclick="'ejecutarScript(' + ${script.id} + ')'">
+                        <i class="material-icons">terminal_2</i>
+                    </button>
+                 </div>
+             </div>
+         </article>
+     </section>
+
+     <section th:if="${categories == null or #lists.isEmpty(categories)}">
+         <div class="scripts-empty">
+             No hay categorías disponibles para mostrar.
+         </div>
+     </section>
+ </main>
+
+ <div id="categoryModal" class="modal" onclick="closeOnBackdrop(event, 'categoryModal')">
+     <div class="modal-content">
+         <div class="modal-header">
+             <h2>Nueva categoría</h2>
+             <button type="button" class="modal-close" onclick="closeModal('categoryModal')">×</button>
+         </div>
+
+         <form action="/api/category/create" method="post" class="form-grid">
+             <div class="form-group">
+                 <label for="categoryName">Nombre</label>
+                 <input id="categoryName" name="name" type="text" required placeholder="Ej. Backend">
+             </div>
+
+             <div class="form-actions">
+                 <button type="button" class="btn btn-ghost" onclick="closeModal('categoryModal')">Cancelar</button>
+                 <button type="submit" class="btn btn-primary">Guardar categoría</button>
+             </div>
+         </form>
+     </div>
+ </div>
+
+ <div id="scriptModal" class="modal" onclick="closeOnBackdrop(event, 'scriptModal')">
+     <div class="modal-content">
+         <div class="modal-header">
+             <h2>Nuevo script</h2>
+             <button type="button" class="modal-close" onclick="closeModal('scriptModal')">×</button>
+         </div>
+
+         <form action="/api/script/create" method="post" class="form-grid">
+             <div class="form-group">
+                 <label for="scriptCategory">Categoría</label>
+                 <select id="scriptCategory" name="categoryId" required>
+                     <option value="">Selecciona una categoría</option>
+                     <option th:each="category : ${categories}"
+                             th:value="${category.id}"
+                             th:text="${category.name}">
+                         Backend
+                     </option>
+                 </select>
+             </div>
+
+             <div class="form-group">
+                 <label for="scriptName">Nombre del script</label>
+                 <input id="scriptName" name="name" type="text" required placeholder="Ej. build-app">
+             </div>
+
+             <div class="form-group">
+                 <label for="scriptCommand">Path</label>
+                 <input id="scriptCommand" name="path" type="text" required placeholder="Colocar el path al script">
+             </div>
+
+             <div class="form-actions">
+                 <button type="button" class="btn btn-ghost" onclick="closeModal('scriptModal')">Cancelar</button>
+                 <button type="submit" class="btn btn-primary">Guardar script</button>
+             </div>
+         </form>
+     </div>
+ </div>
+
+ <script>
+     function ejecutarScript(id) {
+         fetch('/api/script/execute/' + id)
+             .then(() => console.log('Script ejecutado: ' + id))
+             .catch(err => console.error('Error al ejecutar el script:', err));
+     }
+
+     function openModal(modalId) {
+         document.getElementById(modalId).classList.add('is-open');
+         document.body.classList.add('modal-open');
+     }
+
+     function closeModal(modalId) {
+         document.getElementById(modalId).classList.remove('is-open');
+         document.body.classList.remove('modal-open');
+     }
+
+     function closeOnBackdrop(event, modalId) {
+         if (event.target.id === modalId) {
+             closeModal(modalId);
+         }
+     }
+
+     document.addEventListener('keydown', function (event) {
+         if (event.key === 'Escape') {
+             document.querySelectorAll('.modal.is-open').forEach(function (modal) {
+                 modal.classList.remove('is-open');
+             });
+             document.body.classList.remove('modal-open');
+         }
+     });
+ </script>
+ </body>
+ </html>
